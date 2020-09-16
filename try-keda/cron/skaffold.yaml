@@ -1,0 +1,12 @@
+apiVersion: skaffold/v2beta7
+kind: Config
+metadata:
+  name: try-keda
+build:
+  artifacts:
+  - image: zzxwill/keda-example
+deploy:
+  kubectl:
+    manifests:
+    - keda-cron.yaml
+    - php-apache-deployment.yaml
