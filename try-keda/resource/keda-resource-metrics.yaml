@@ -1,0 +1,42 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: resource-poc
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: php-apache
+    apiVersion: apps/v1
+    kind: Deployment
+  pollingInterval: 2
+  cooldownPeriod:  10
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  advanced:
+    horizontalPodAutoscalerConfig:                   # Optional. Section to specify HPA related options
+      resourceMetrics:                               # Optional. If not set, KEDA won't scale based on resource utilization
+        - name: cpu                                  # Name of the metric to scale on
+          target:
+            type: Utilization
+            averageUtilization: 20                     # Optional
+      behavior:                                      # Optional. Use to modify HPA's scaling behavior
+        scaleDown:
+          stabilizationWindowSeconds: 20
+          policies:
+            - type: Percent
+              value: 25
+              periodSeconds: 15
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+  triggers:
+    - type: cron
+      metadata:
+        # Required
+        timezone: Asia/Shanghai # The acceptable values would be a value from the IANA Time Zone Database.
+        start: 1 * * * *       # Every hour on the 30th minute
+        end: 40 * * * *         # Every hour on the 45th minute
+        desiredReplicas: "4"    # String.
