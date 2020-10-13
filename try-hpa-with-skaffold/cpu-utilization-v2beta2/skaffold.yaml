@@ -1,0 +1,12 @@
+apiVersion: skaffold/v2beta7
+kind: Config
+metadata:
+  name: cpu-utilization
+build:
+  artifacts:
+  - image: zzxwill/hpa-example
+deploy:
+  kubectl:
+    manifests:
+    - autoscaler.yaml
+    - php-apache.yaml
