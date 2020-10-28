@@ -1,0 +1,12 @@
+apiVersion: skaffold/v2beta7
+kind: Config
+metadata:
+  name: oam
+build:
+  artifacts:
+  - image: zzxwill/postgresql-flask-web-application
+deploy:
+  kubectl:
+    manifests:
+    - appconfig-poc.yaml
+    - component-webapp.yaml

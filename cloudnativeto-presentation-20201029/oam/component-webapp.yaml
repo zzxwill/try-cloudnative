@@ -1,0 +1,26 @@
+apiVersion: core.oam.dev/v1alpha2
+kind: Component
+metadata:
+  name: webapp
+spec:
+  workload:
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: webapp
+      namespace: default      
+    spec:
+      selector:
+        matchLabels:
+          app: webapp
+      template:
+        metadata:
+          labels:
+            app: webapp
+        spec:
+          containers:
+            - image: zzxwill/postgresql-flask-web-application:v0.2
+              name: webapp
+              ports:
+                - containerPort: 80
+          timeoutSeconds: 600
