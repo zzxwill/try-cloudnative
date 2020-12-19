@@ -1,0 +1,9 @@
+createTime: "2020-12-19T13:12:24.735071+08:00"
+name: hello
+services:
+  s1:
+    cpu: "0.5"
+    image: nginx:1.9.4
+    port: 80
+    type: webservice
+updateTime: "2020-12-19T13:13:14.845904+08:00"

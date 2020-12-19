@@ -1,0 +1,19 @@
+name: testapp
+
+services:
+  express-server:
+    # this image will be used in both build and deploy steps
+    image: oamdev/testapp:v1
+
+    cmd: ["node", "server.js"]
+    port: 8080
+
+    autoscale:
+      min: 1
+      max: 4
+      cron:
+        startAt:  "13:00"
+        duration: "6h"
+        days:     "Monday, Saturday"
+        replicas: 2
+        timezone: "Asia/Shanghai"
