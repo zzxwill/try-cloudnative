@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    app.oam.dev/generation: "1"
+  creationTimestamp: "2020-12-05T10:24:17Z"
+  labels:
+    app.oam.dev/component: wordpress
+    app.oam.dev/name: blog
+    app.oam.dev/resourceType: TRAIT
+    app.oam.dev/revision: wordpress-v1
+    trait.oam.dev/type: loadbalancer
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:app.oam.dev/generation: {}
+        f:labels:
+          .: {}
+          f:app.oam.dev/component: {}
+          f:app.oam.dev/name: {}
+          f:app.oam.dev/resourceType: {}
+          f:app.oam.dev/revision: {}
+          f:trait.oam.dev/type: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"ec493b25-f527-40ad-a934-e22b1c9398f9"}:
+            .: {}
+            f:apiVersion: {}
+            f:blockOwnerDeletion: {}
+            f:controller: {}
+            f:kind: {}
+            f:name: {}
+            f:uid: {}
+      f:spec:
+        f:ports:
+          .: {}
+          k:{"port":8080,"protocol":"TCP"}:
+            .: {}
+            f:name: {}
+            f:port: {}
+            f:protocol: {}
+            f:targetPort: {}
+        f:sessionAffinity: {}
+        f:type: {}
+    manager: manager
+    operation: Update
+    time: "2020-12-05T10:24:17Z"
+  name: wordpress-loadbalancer-5f84574898
+  namespace: default
+  ownerReferences:
+  - apiVersion: core.oam.dev/v1alpha2
+    blockOwnerDeletion: true
+    controller: true
+    kind: ApplicationConfiguration
+    name: blog
+    uid: ec493b25-f527-40ad-a934-e22b1c9398f9
+  resourceVersion: "19358409"
+  selfLink: /api/v1/namespaces/default/services/wordpress-loadbalancer-5f84574898
+  uid: 07d086b5-97d1-4103-b916-40aee752f141
+spec:
+  clusterIP: 172.21.12.1
+  ports:
+  - name: poc
+    port: 8080
+    protocol: TCP
+    targetPort: 80
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

@@ -1,0 +1,15 @@
+name: blog
+
+services:
+  wordpress:
+    type: webservice # could be skipped
+    image: wordpress:php7.4-apache
+    port: 80
+    cpu: "1"
+
+    loadbalancer:
+      ports:
+        - name: poc
+          port: 8080
+          protocol: TCP
+          targetPort: 80

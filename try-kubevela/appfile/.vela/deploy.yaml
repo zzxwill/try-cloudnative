@@ -1,0 +1,83 @@
+apiVersion: core.oam.dev/v1alpha2
+kind: ApplicationConfiguration
+metadata:
+  creationTimestamp: null
+  name: testapp
+  namespace: default
+spec:
+  components:
+  - componentName: express-server
+    scopes:
+    - scopeRef:
+        apiVersion: core.oam.dev/v1alpha2
+        kind: HealthScope
+        name: testapp-default-health
+    traits:
+    - trait:
+        apiVersion: standard.oam.dev/v1alpha1
+        kind: Autoscaler
+        metadata:
+          labels:
+            trait.oam.dev/type: autoscale
+        spec:
+          maxReplicas: 4
+          minReplicas: 1
+          triggers:
+          - condition:
+              days: Monday, Saturday
+              duration: 6h
+              replicas: "2"
+              startAt: "13:00"
+              timezone: Asia/Shanghai
+            type: cron
+status:
+  dependency: {}
+  observedGeneration: 0
+
+---
+apiVersion: core.oam.dev/v1alpha2
+kind: Component
+metadata:
+  creationTimestamp: null
+  name: express-server
+  namespace: default
+spec:
+  workload:
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        workload.oam.dev/type: webservice
+    spec:
+      selector:
+        matchLabels:
+          app.oam.dev/component: express-server
+      template:
+        metadata:
+          labels:
+            app.oam.dev/component: express-server
+        spec:
+          containers:
+          - command:
+            - node
+            - server.js
+            image: oamdev/testapp:v1
+            name: express-server
+            ports:
+            - containerPort: 8080
+status:
+  observedGeneration: 0
+
+---
+apiVersion: core.oam.dev/v1alpha2
+kind: HealthScope
+metadata:
+  creationTimestamp: null
+  name: testapp-default-health
+  namespace: default
+spec:
+  workloadRefs: []
+status:
+  scopeHealthCondition:
+    healthStatus: ""
+

@@ -3,32 +3,32 @@ kind: TraitDefinition
 metadata:
   name: loadbalancer
   annotations:
-    definition.oam.dev/description: "`LoadBalancer` is used to provider load balancer for applications and publish service."
+    definition.oam.dev/description: Provide loadbalancer for an application and publish its service"
 spec:
   appliesToWorkloads:
     - webservice
   workloadRefPath: spec.workloadRef
   definitionRef:
-    name: loadbalancer.extend.oam.dev
+    name: service
   extension:
     template: |
       output: {
-        apiVersion: v1
-        kind: Service
-        spec:
+        apiVersion: "v1"
+        kind: "Service"
+        spec: {
           ports: parameter.ports
-          selector: parameter.selector
-          type: LoadBalancer
+          selector: {
+            "app.oam.dev/component": context.name
+          }
+          type: "LoadBalancer"
+        }
       }
 
       parameter: {
-      	name: string
       	ports: [...{
             name: string
             port: *80 | int
             protocol: *"TCP" | string
             targetPort: int
       	}]
-        selector?: [string]: string
       }
-      

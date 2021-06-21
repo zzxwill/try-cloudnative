@@ -1,0 +1,83 @@
+apiVersion: core.oam.dev/v1alpha2
+kind: ApplicationConfiguration
+metadata:
+  creationTimestamp: null
+  name: blog
+  namespace: default
+spec:
+  components:
+  - componentName: wordpress
+    scopes:
+    - scopeRef:
+        apiVersion: core.oam.dev/v1alpha2
+        kind: HealthScope
+        name: blog-default-health
+    traits:
+    - trait:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          labels:
+            trait.oam.dev/type: loadbalancer
+        spec:
+          ports:
+          - name: poc
+            port: 8080
+            protocol: TCP
+            targetPort: 80
+          selector:
+            app.oam.dev/component: wordpress
+          type: LoadBalancer
+status:
+  dependency: {}
+  observedGeneration: 0
+
+---
+apiVersion: core.oam.dev/v1alpha2
+kind: Component
+metadata:
+  creationTimestamp: null
+  name: wordpress
+  namespace: default
+spec:
+  workload:
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        workload.oam.dev/type: webservice
+    spec:
+      selector:
+        matchLabels:
+          app.oam.dev/component: wordpress
+      template:
+        metadata:
+          labels:
+            app.oam.dev/component: wordpress
+        spec:
+          containers:
+          - image: wordpress:php7.4-apache
+            name: wordpress
+            ports:
+            - containerPort: 80
+            resources:
+              limits:
+                cpu: "1"
+              requests:
+                cpu: "1"
+status:
+  observedGeneration: 0
+
+---
+apiVersion: core.oam.dev/v1alpha2
+kind: HealthScope
+metadata:
+  creationTimestamp: null
+  name: blog-default-health
+  namespace: default
+spec:
+  workloadRefs: []
+status:
+  scopeHealthCondition:
+    healthStatus: ""
+
