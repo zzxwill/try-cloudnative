@@ -4,11 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
+	"gopkg.in/src-d/go-git.v4"
 )
 
 type TFDownload struct {
@@ -37,6 +42,8 @@ type RelationshipLatestVersion struct {
 type RelationshipData struct {
 	Id string `json:"id"`
 }
+
+var errNoVariables = errors.New("failed to find main.tf or variables.tf in Terraform configurations")
 
 type Attributes struct {
 	Name        string `json:"name"`
@@ -104,14 +111,100 @@ func main() {
 			module.Attributes.Name == "subnet" || module.Attributes.Name == "vpc") {
 			continue
 		}
-		cmd := fmt.Sprintf("vela def init %s --type component --provider %s --git %s.git --desc \"%s\" -o %s",
-			module.Attributes.Name, providerName, module.Attributes.Source, description, outputFile)
-		fmt.Println(cmd)
-		stdout, err := exec.Command("bash", "-c", cmd).CombinedOutput()
-		if err != nil {
+		if err := generateDefinition(providerName, module.Attributes.Name, module.Attributes.Source, "", description); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
-		fmt.Println(string(stdout))
+
+		if err := checkDocGen(providerName, module.Attributes.Name); err != nil {
+			if err == errNoVariables {
+				if err := regenerateDefinition(providerName, module.Attributes.Name, module.Attributes.Source, description); err != nil {
+					fmt.Println(err.Error())
+					os.Exit(1)
+				}
+			}
+		}
 	}
+}
+
+func checkDocGen(provider, name string) error {
+	defName := fmt.Sprintf("%s-%s", provider, name)
+	defYaml := filepath.Join(provider, fmt.Sprintf("terraform-%s.yaml", defName))
+	cmd := fmt.Sprintf("kubectl apply -f %s", defYaml)
+	stdout, err := exec.Command("bash", "-c", cmd).CombinedOutput()
+	if err != nil {
+		return errors.Wrap(err, string(stdout))
+	}
+	fmt.Println(string(stdout))
+	fmt.Printf("Generate doc for %s", defName)
+	cmd = fmt.Sprintf("vela def doc-gen %s -n vela-system", defName)
+	stdout, err = exec.Command("bash", "-c", cmd).CombinedOutput()
+	if err != nil {
+		if strings.Contains(string(stdout), errNoVariables.Error()) {
+			return errNoVariables
+		}
+		return err
+	}
+	return nil
+}
+
+func generateDefinition(provider, name, gitURL, path, description string) error {
+	defYaml := filepath.Join(provider, fmt.Sprintf("terraform-%s-%s.yaml", provider, name))
+
+	cmd := fmt.Sprintf("vela def init %s --type component --provider %s --git %s.git --desc \"%s\" -o %s",
+		name, provider, gitURL, description, defYaml)
+	if path != "" {
+		cmd = fmt.Sprintf("%s --path %s", cmd, path)
+	}
+	fmt.Println(cmd)
+	stdout, err := exec.Command("bash", "-c", cmd).CombinedOutput()
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(stdout))
+	return nil
+}
+
+func regenerateDefinition(provider, name, gitUrl, description string) error {
+	defYaml := filepath.Join(provider, fmt.Sprintf("terraform-%s-%s.yaml", provider, name))
+	if err := os.Remove(defYaml); err != nil {
+		return err
+	}
+	tmpPath := "./tmp/terraform"
+	// Check if the directory exists. If yes, remove it.
+	if _, err := os.Stat(tmpPath); !os.IsNotExist(err) {
+		err := os.RemoveAll(tmpPath)
+		if err != nil {
+			return errors.Wrap(err, "failed to remove the directory")
+		}
+	}
+	_, err := git.PlainClone(tmpPath, false, &git.CloneOptions{
+		URL:      gitUrl,
+		Progress: nil,
+	})
+	if err != nil {
+		return err
+	}
+
+	infos, err := ioutil.ReadDir(filepath.Join(tmpPath, "modules"))
+	if err != nil {
+		return err
+	}
+	for _, info := range infos {
+		var newName = info.Name()
+		if name == "cloudwatch" || name == "route53" {
+			newName = name + "-" + info.Name()
+		}
+		path := filepath.Join("modules", info.Name())
+		if err := generateDefinition(provider, newName, gitUrl, path, description); err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		if err := checkDocGen(provider, newName); err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+	}
+	return nil
 }
